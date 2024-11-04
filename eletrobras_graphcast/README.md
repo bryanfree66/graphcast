@@ -37,16 +37,3 @@ This project aims to demonstrate the value of GraphCast in providing accurate an
 * **Google Cloud Platform (GCP)**: 
     * Compute Engine, TPU v4
     * Cloud Storage
-    * Cloud Functions
-    * Cloud Scheduler
-* **Python**: With libraries like Xarray, TensorFlow, JAX, Haiku, Matplotlib, Cartopy.
-
-
-## Contributing
-
-Contributions to this project are welcome! Please feel free to open issues or submit pull requests.
-
-
-## Contact
-
-Bryan Freeman - [bryanfreeman@google.com](bryanfreeman@google.com)
