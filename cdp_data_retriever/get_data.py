@@ -59,5 +59,5 @@ def download_data(year):
     )
 
 if __name__ == '__main__':
-    for year in range(2022, 2025):
+    for year in range(2022, 2024):
         download_data(year)
