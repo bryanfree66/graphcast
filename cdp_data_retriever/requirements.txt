@@ -1,0 +1,3 @@
+xarray
+cdsapi>=0.7.2
+google-cloud-storage==2.18.2
