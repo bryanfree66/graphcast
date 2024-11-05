@@ -1,84 +1,63 @@
+# downloader.py
 import cdsapi
-from google.cloud import storage
-import xarray
-
-# Your CDS API credentials should be set in the ~/.cdsapirc file
-# See https://cds.climate.copernicus.eu/api-how-to
-
-dataset = "reanalysis-era5-single-levels"
-request = {
-    "product_type": ["reanalysis"],
-    "variable": [
-        "10m_u_component_of_wind",
-        "10m_v_component_of_wind",
-        "2m_dewpoint_temperature",
-        "2m_temperature",
-        "mean_sea_level_pressure",
-        "sea_surface_temperature",
-        "surface_pressure",
-        "total_precipitation",
-        "geopotential",
-        "total_column_water_vapour"
-    ],
-    "year": ["2022", "2023", "2024"],
-    "month": [
-        "01", "02", "03",
-        "04", "05", "06",
-        "07", "08", "09",
-        "10", "11", "12"
-    ],
-    "day": [
-        "01", "02", "03",
-        "04", "05", "06",
-        "07", "08", "09",
-        "10", "11", "12",
-        "13", "14", "15",
-        "16", "17", "18",
-        "19", "20", "21",
-        "22", "23", "24",
-        "25", "26", "27",
-        "28", "29", "30",
-        "31"
-    ],
-    "time": [
-        "00:00", "06:00", "12:00",
-        "18:00"
-    ],
-    "data_format": "netcdf",
-    "download_format": "unarchived"
-}
+import datetime
 
 client = cdsapi.Client()
 
-# Download the data to a local file
-filename = "./dataset/era5_data.nc"
-client.retrieve(dataset, request, filename)
+singlelevelfields = [
+    '10m_u_component_of_wind',
+    '10m_v_component_of_wind',
+    '2m_temperature',
+    'geopotential',
+    'land_sea_mask',
+    'mean_sea_level_pressure',
+    'toa_incident_solar_radiation',
+    'total_precipitation'
+]
+pressurelevelfields = [
+    'u_component_of_wind',
+    'v_component_of_wind',
+    'geopotential',
+    'specific_humidity',
+    'temperature',
+    'vertical_velocity'
+]
+pressure_levels = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000]
 
-# Upload the file to GCP bucket
-def upload_blob(bucket_name, source_file_name, destination_blob_name):
-    """Uploads a file to the bucket."""
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-    # The path to your file to upload
-    # source_file_name = "local/path/to/file"
-    # The ID of your GCS object
-    # destination_blob_name = "storage-object-name"
+def download_data(year):
+    """Downloads ERA5 data for a single year."""
 
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-
-    blob = bucket.blob(destination_blob_name)
-
-    blob.upload_from_filename(source_file_name)
-
-    print(
-        f"File {source_file_name} uploaded to {destination_blob_name}." 
-
+    client.retrieve(
+        'reanalysis-era5-single-levels',
+        {
+            'product_type': 'reanalysis',
+            'variable': singlelevelfields,
+            'grid': '1.0/1.0',
+            'year': [str(year)],
+            'month': ['{:02d}'.format(month) for month in range(1, 13)],
+            'day': ['{:02d}'.format(day) for day in range(1, 32)],
+            'time': ['{:02d}:00'.format(hour) for hour in range(0, 24)],
+            'format': 'netcdf'
+        },
+        f'Dataset/single-level-{year}.nc'
     )
 
+    client.retrieve(
+        'reanalysis-era5-pressure-levels',
+        {
+            'product_type': 'reanalysis',
+            'variable': pressurelevelfields,
+            'grid': '1.0/1.0',
+            'year': [str(year)],
+            'month': ['{:02d}'.format(month) for month in range(1, 13)],
+            'day': ['{:02d}'.format(day) for day in range(1, 32)],
+            'time': ['06:00', '12:00'],
+            'pressure_level': pressure_levels,
+            'format': 'netcdf'
+        },
+        f'Dataset/pressure-level-{year}.nc'
+    )
 
-# Replace with your bucket name and desired blob name
-bucket_name = "gs://elet-dm-graphcast/dataset"
-destination_blob_name = "era5_data-22-24.nc"
-
-upload_blob(bucket_name, filename, destination_blob_name)
+if __name__ == '__main__':
+    for year in range(2022, 2025):
+        download_data(year)
