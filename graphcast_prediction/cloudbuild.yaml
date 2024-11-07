@@ -1,5 +1,5 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-central1-docker.pkg.dev/bryan-dev-396914/graphcast-repo/graphcast-image', '.']
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/bryan-dev-396914/elet-graphcast-repo/graphcast-image', '.']
 images:
-- 'us-central1-docker.pkg.dev/bryan-dev-396914/graphcast-repo/graphcast-image'
+- 'us-central1-docker.pkg.dev/bryan-dev-396914/elet-graphcast-repo/graphcast-image'
