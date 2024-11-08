@@ -1,4 +1,4 @@
-# predictor.py
+# predictions.py
 from flask import Flask, request, jsonify
 from typing import List, Dict
 import datetime
@@ -19,6 +19,14 @@ from typing import Dict
 import xarray
 import os
 
+location_options = {
+    "Foz de Iguazu": (-25.26, -54.32, "A846"),
+    "Grajau": (-22.93, -43.26, "A636"),
+    "Campinas": (-22.46, -47.00, "A846"), 
+    "Sao Jose": (-22.75, -43.33, "A621"),
+    "Tocantins": (-10.66, -48.29, "MTBA-PLUH"),
+    "Paraíba do Sul": (-22.16, -43.29, "RESA-PLUH")
+}
 
 # Set environment variables for TPU
 os.environ['JAX_PLATFORM_NAME'] = 'tpu'
@@ -174,13 +182,22 @@ def addTimezone(dt, tz = pytz.UTC) -> datetime.datetime:
     else:
         return dt.astimezone(tz)
 
-# Load ERA5 data for a single year
-def getSingleAndPressureValues(year):
-    data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'gs://elet-dm-graphcast/dataset')  # Get bucket name from environment variable, default to 'gs://elet-dm-graphcast/dataset' if not set
-    
-    # Access data files using the bucket name
-    singlelevel = xarray.open_dataset(f'{data_bucket_name}/single-level-{year}.nc', engine=scipy.__name__).to_dataframe()
+# Load ERA5 data for a single year and month
+def getSingleAndPressureValues(year, month, data_bucket_name):
+    """
+    Loads single-level and pressure-level data for the specified year and month.
 
+    Args:
+        year: The year for which to load the data.
+        month: The month for which to load the data.
+        data_bucket_name: The name of the GCS bucket containing the data.
+
+    Returns:
+        A tuple containing two pandas DataFrames:
+            - singlelevel: DataFrame with single-level data.
+            - pressurelevel: DataFrame with pressure-level data.
+    """
+    singlelevel = xarray.open_dataset(f'{data_bucket_name}/single-level-{year}-{month:02d}.nc', engine=scipy.__name__).to_dataframe()
     singlelevel = singlelevel.rename(columns={col: singlelevelfields[ind] for ind, col in enumerate(singlelevel.columns.values.tolist())})
     singlelevel = singlelevel.rename(columns={'geopotential': 'geopotential_at_surface'})
 
@@ -189,8 +206,7 @@ def getSingleAndPressureValues(year):
     singlelevel['total_precipitation_6hr'] = singlelevel.groupby(level=[0, 1])['total_precipitation'].rolling(window=6, min_periods=1).sum().reset_index(level=[0, 1], drop=True)
     singlelevel.pop('total_precipitation')
 
-    pressurelevel = xarray.open_dataset(f'{data_bucket_name}/pressure-level-{year}.nc', engine=scipy.__name__).to_dataframe()
-    
+    pressurelevel = xarray.open_dataset(f'{data_bucket_name}/pressure-level-{year}-{month:02d}.nc', engine=scipy.__name__).to_dataframe()
     pressurelevel = pressurelevel.rename(columns={col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
 
     return singlelevel, pressurelevel
@@ -273,91 +289,115 @@ def getForcings(data:pd.DataFrame):
     forcingdf = integrateSolarRadiation(forcingdf)
     return forcingdf
 
-def generate_forecast(init_date: datetime.datetime,
-                      init_time: datetime.time,
-                      variable: str,
-                      lat: float,
-                      lon: float,
-                      horizons: List[str] = ['6h', '12h', '1d', '2d', '3d', '5d', '10d']  # Default horizons
-                      ) -> List[Dict]:
+def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -> List[Dict]:
     """
-    Generates weather forecasts using GraphCast for a given location and time.
+    Generates batched weather forecasts for multiple locations and a specified number of 6-hour horizons.
 
     Args:
         init_date: The initial date for the forecast.
-        init_time: The initial time for the forecast.
-        variable: The weather variable to forecast (e.g., '2m_temperature').
-        lat: The latitude of the location.
-        lon: The longitude of the location.
-        horizons: A list of forecast horizons (e.g., ['6h', '12h', '1d']).
+        forecast_steps: The number of 6-hour forecast steps to generate.
 
     Returns:
-        A list of dictionaries, where each dictionary represents a forecast step
-        and contains the time and values for all prediction variables.
+        A list of dictionaries, where each dictionary represents a forecast record
+        for a specific location, time, and prediction variables.
     """
     data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'gs://elet-dm-graphcast/dataset')
 
-    values: Dict[str, xarray.Dataset] = {}
-
-    # Get data for the specified year
+    # Determine the month for file retrieval
+    month = init_date.month
     year = init_date.year
-    if year in range(2022, 2025):
-        single, pressure = getSingleAndPressureValues(year, data_bucket_name)
-        values['inputs'] = pd.merge(pressure, single, left_index=True, right_index=True, how='inner')
-        values['inputs'] = values['inputs'].xs((lat, lon), level=('lat', 'lon'))  # Filter by lat and lon
-        values['inputs'] = values['inputs'].loc[pd.Timestamp(init_date.year, init_date.month, init_date.day, init_time.hour, init_time.minute)]
-        values['targets'] = getTargets(first_prediction, values['inputs'])
-        values['forcings'] = getForcings(values['targets'])
-        values = {value: makeXarray(values[value]) for value in values}
-        predictions = Predictor.predict(values['inputs'], values['targets'], values['forcings'])
 
-        # Store forecast results in a list of dictionaries
-        forecast_results = []
+    forecast_results = []
 
-        # Convert horizon strings to timedeltas
-        horizon_deltas = []
-        for horizon in horizons:
-            value = int(horizon[:-1])
-            unit = horizon[-1]
-            if unit == 'h':
-                horizon_deltas.append(datetime.timedelta(hours=value))
-            elif unit == 'd':
-                horizon_deltas.append(datetime.timedelta(days=value))
-            # Add more units (e.g., 'w' for weeks, 'm' for months) as needed
+    for location_name, (lat, lon, station_id) in location_options.items():
+        values: Dict[str, xarray.Dataset] = {}
 
-        # Extract forecast data for specified horizons
-        for delta in horizon_deltas:
-            forecast_time = pd.Timestamp(init_date) + delta
-            try:
-                forecast_step = {
-                    'time': forecast_time.to_pydatetime().isoformat(),  # Convert Timestamp to ISO format string
-                }
-                for field in predictionFields:
-                    forecast_step[field] = predictions[field].sel(time=forecast_time, method='nearest').values.tolist()
-                forecast_results.append(forecast_step)
-            except KeyError:
-                print(f"Warning: No forecast data found for time {forecast_time}. Skipping.")
+        if year in range(2022, 2025):
+            single, pressure = getSingleAndPressureValues(year, month, data_bucket_name)
+            values['inputs'] = pd.merge(pressure, single, left_index=True, right_index=True, how='inner')
+            values['inputs'] = values['inputs'].xs((lat, lon), level=('lat', 'lon'))
 
-        return forecast_results
+            # Roll out the forecast for the specified number of steps
+            current_time = datetime.datetime(year, month, init_date.day, 6, 0)  # Start at 6:00 AM
+            end_time = current_time + datetime.timedelta(hours=6 * forecast_steps)  # Calculate end time based on steps
+
+            while current_time < end_time:
+                try:
+                    values['inputs'] = values['inputs'].loc[pd.Timestamp(current_time.year, current_time.month, current_time.day, current_time.hour, current_time.minute)]
+                    values['targets'] = getTargets(first_prediction, values['inputs'])
+                    values['forcings'] = getForcings(values['targets'])
+                    values = {value: makeXarray(values[value]) for value in values}
+                    predictions = Predictor.predict(values['inputs'], values['targets'], values['forcings'])
+
+                    forecast_step = {
+                        'init_time': init_date.isoformat(),  # ISO format for init_date
+                        'station_id': station_id,
+                        'name': location_name,
+                        'hours': int((current_time - datetime.datetime(year, month, init_date.day)).total_seconds() / 3600),  # Hours since the beginning of the day
+                    }
+
+                    for field in predictionFields:
+                        forecast_step[field] = predictions[field].sel(time=pd.Timestamp(current_time), method='nearest').values.tolist()
+
+                    forecast_results.append(forecast_step)
+
+                except KeyError:
+                    print(f"Warning: No forecast data found for time {current_time}. Skipping.")
+
+                current_time += datetime.timedelta(hours=6)  # Increment by 6 hours
+
+        else:
+            raise ValueError("Invalid year. Please provide a year between 2022 and 2024.")
+
+    return forecast_results
+
+def write_to_bigquery(forecast_results: List[Dict]):
+    """
+    Writes forecast results to BigQuery table.
+
+    Args:
+        forecast_results: A list of dictionaries containing forecast data.
+    """
+    # Construct the BigQuery client
+    client = bigquery.Client()
+    table_id = 'your-project-id.elet_meteorologia_datos_bq.elet_meteorologia_datos_predictions'  # Replace with your actual table ID
+
+    # Convert forecast_results to a list of rows compatible with BigQuery schema
+    rows_to_insert = []
+    for result in forecast_results:
+        row = {
+            'init_time': result['init_time'],
+            'station_id': result['station_id'],
+            'name': result['name'],
+            'hours': result['hours'],
+            # ... map other fields from forecast_results to BigQuery columns ...
+        }
+        rows_to_insert.append(row)
+
+    # Insert rows into BigQuery table
+    errors = client.insert_rows_json(table_id, rows_to_insert)  # API request
+    if errors == []:
+        print("New rows have been added.")
     else:
-        raise ValueError("Invalid year. Please provide a year between 2022 and 2024.")
+        print(f"Encountered errors while inserting rows: {errors}")
 
-@app.route('/forecast', methods=['GET'])
-def get_forecast():
+@app.route('/forecast_batch', methods=['POST'])
+def forecast_batch():
     try:
-        init_date = datetime.datetime.strptime(request.args.get('init_date'), '%Y-%m-%d')
-        init_time = datetime.datetime.strptime(request.args.get('init_time'), '%H:%M').time()
-        variable = request.args.get('variable')
-        lat = float(request.args.get('lat'))
-        lon = float(request.args.get('lon'))
-        horizons = int(request.args.get('horizons'))
+        # Assuming you're sending init_date and forecast_steps in the request body as JSON
+        request_data = request.get_json()
+        init_date = datetime.datetime.strptime(request_data['init_date'], '%Y-%m-%d')
+        forecast_steps = int(request_data['forecast_steps'])  # Get forecast_steps from request data
 
-        forecast_results = main_execution_block(init_date, init_time, variable, lat, lon, horizons)
-        return jsonify(forecast_results)
+        forecast_results = generate_forecast_batch(init_date, forecast_steps)  # Pass forecast_steps to the function
+
+        # Write the results to BigQuery
+        write_to_bigquery(forecast_results)
+
+        return jsonify({'message': 'Batch forecast generated and written to BigQuery'}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500  # Return error message in case of an exception
+        return jsonify({'error': str(e)}), 500
 
-# Main execution block
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
