@@ -1,0 +1,1 @@
+gcloud compute tpus tpu-vm create elet-graphcast-tpu-vm3 --zone=us-central1-a --accelerator-type=v3-8 --version=tpu-vm-tf-2.11.0 --network=default --subnetwork=default --service-account=191989114509-compute@developer.gserviceaccount.com
