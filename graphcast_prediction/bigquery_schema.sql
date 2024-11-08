@@ -1,9 +1,10 @@
 CREATE SCHEMA IF NOT EXISTS elet_meteorologia_datos_bq;
 
-CREATE TABLE IF NOT EXISTS elet_meteorologia_datos_bq.elet_meteorologia_datos_predictions (
+CREATE OR REPLACE TABLE elet_meteorologia_datos_bq.elet_meteorologia_datos_predictions (
     init_time TIMESTAMP,
+    station_id INT64,
+    name STRING,
     geography GEOGRAPHY,
-    geography_polygon GEOGRAPHY,
     forecast ARRAY<STRUCT<
         time TIMESTAMP,
         hours INT64,
