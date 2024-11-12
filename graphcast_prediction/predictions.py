@@ -1,5 +1,4 @@
 # predictions.py
-from flask import Flask, request, jsonify
 from typing import List, Dict
 import datetime
 import functools
@@ -374,23 +373,20 @@ def write_to_bigquery(forecast_results: List[Dict]):
     else:
         print(f"Encountered errors while inserting rows: {errors}")
 
-@app.route('/forecast_batch', methods=['POST'])
-def forecast_batch():
+def main(init_date_str, forecast_steps):  # Accept parameters
     try:
-        # Assuming you're sending init_date and forecast_steps in the request body as JSON
-        request_data = request.get_json()
-        init_date = datetime.datetime.strptime(request_data['init_date'], '%Y-%m-%d')
-        forecast_steps = int(request_data['forecast_steps'])  # Get forecast_steps from request data
-
-        forecast_results = generate_forecast_batch(init_date, forecast_steps)  # Pass forecast_steps to the function
+        init_date = datetime.datetime.strptime(init_date_str, '%Y-%m-%d')
+        forecast_results = generate_forecast_batch(init_date, forecast_steps)
 
         # Write the results to BigQuery
         write_to_bigquery(forecast_results)
 
-        return jsonify({'message': 'Batch forecast generated and written to BigQuery'}), 200
+        print('Batch forecast generated and written to BigQuery')
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'Error: {str(e)}')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    init_date_str = sys.argv[1]  # Get init_date from command-line arguments
+    forecast_steps = int(sys.argv[2])  # Get forecast_steps from command-line arguments
+    main(init_date_str, forecast_steps)  # Pass arguments to main function
