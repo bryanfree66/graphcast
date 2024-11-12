@@ -47,14 +47,7 @@ singlelevelfields = [
     'toa_incident_solar_radiation',
     'total_precipitation'
 ]
-pressurelevelfields = [
-    'u_component_of_wind',
-    'v_component_of_wind',
-    'geopotential',
-    'specific_humidity',
-    'temperature',
-    'vertical_velocity'
-]
+
 predictionFields = [
     'u_component_of_wind',
     'v_component_of_wind',

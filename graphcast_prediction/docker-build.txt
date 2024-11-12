@@ -1,0 +1,1 @@
+docker build -t us-docker.pkg.dev/bryan-dev-396914/elet-graphcast-bryan-dev-396914/graphcast:latest .
