@@ -1,4 +1,4 @@
 {
     "init_date": "2022-01-01T12:00:00",
-    "forecast_steps": 24 // Example: generate a 24-hour forecast
+    "forecast_steps": 24
 }
