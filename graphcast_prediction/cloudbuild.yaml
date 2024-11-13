@@ -25,7 +25,7 @@ steps:
     docker pull us-central1-docker.pkg.dev/$PROJECT_ID/elet-meteorologia-graphcast-dev/graphcast:latest
 
     # Grant permissions to the user to execute docker commands without sudo
-    sudo usermod -aG docker $USER
+    sudo usermod -aG docker bryanfreeman@google.com
 
     # This line is necessary to ensure the changes take effect immediately
     newgrp docker

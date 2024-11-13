@@ -117,6 +117,7 @@ with open(f'{stats_bucket_name}/stddev_by_level.nc', 'rb') as f:
 
 # Construct the GraphCast predictor
 def construct_wrapped_graphcast(model_config:graphcast.ModelConfig, task_config:graphcast.TaskConfig):
+    print("Constructing wrapped Graphcast predictor")
     predictor = graphcast.GraphCast(model_config, task_config)
     predictor = casting.Bfloat16Cast(predictor)
     predictor = normalization.InputsAndResiduals(predictor, diffs_stddev_by_level = diffs_stddev_by_level, mean_by_level = mean_by_level, stddev_by_level = stddev_by_level)
@@ -168,6 +169,7 @@ def deltaTime(dt, **delta) -> datetime.datetime:
     return dt + datetime.timedelta(**delta)
 
 def addTimezone(dt, tz = pytz.UTC) -> datetime.datetime:
+    print("Adding time zone.")
     dt = toDatetime(dt)
     if dt.tzinfo is None:
         return pytz.UTC.localize(dt).astimezone(tz)
@@ -189,6 +191,7 @@ def getSingleAndPressureValues(year, month, data_bucket_name):
             - singlelevel: DataFrame with single-level data.
             - pressurelevel: DataFrame with pressure-level data.
     """
+    print("Loading pressure level data from GCS")
     singlelevel = xarray.open_dataset(f'{data_bucket_name}/single-level-{year}-{month:02d}.nc', engine=scipy.__name__).to_dataframe()
     singlelevel = singlelevel.rename(columns={col: singlelevelfields[ind] for ind, col in enumerate(singlelevel.columns.values.tolist())})
     singlelevel = singlelevel.rename(columns={'geopotential': 'geopotential_at_surface'})
@@ -205,6 +208,7 @@ def getSingleAndPressureValues(year, month, data_bucket_name):
 
 # Add sin and cos of the year progress
 def addYearProgress(secs, data):
+    print("Adding yearly progress.")
     progress = du.get_year_progress(secs)
     data['year_progress_sin'] = np.sin(2 * pi * progress)
     data['year_progress_cos'] = np.cos(2 * pi * progress)
@@ -212,6 +216,7 @@ def addYearProgress(secs, data):
 
 # Add sin and cos of the day progress
 def addDayProgress(secs, lon:str, data:pd.DataFrame):
+    print("Adding progress for the day")
     lons = data.index.get_level_values(lon).unique()
     progress:np.ndarray = du.get_day_progress(secs, np.array(lons))
     prxlon = {lon:prog for lon, prog in list(zip(list(lons), progress.tolist()))}
@@ -221,6 +226,7 @@ def addDayProgress(secs, lon:str, data:pd.DataFrame):
 
 # Integrate progress data
 def integrateProgress(data:pd.DataFrame):
+    print("Integrating progress")
     for dt in data.index.get_level_values('time').unique():
         seconds_since_epoch = toDatetime(dt).timestamp()
         data = addYearProgress(seconds_since_epoch, data)
@@ -229,12 +235,14 @@ def integrateProgress(data:pd.DataFrame):
 
 # Calculate solar radiation
 def getSolarRadiation(longitude, latitude, dt):
+    print("Getting solar radiation data")
     altitude_degrees = get_altitude(latitude, longitude, addTimezone(dt))
     solar_radiation = get_radiation_direct(dt, altitude_degrees) if altitude_degrees > 0 else 0
     return solar_radiation * watts_to_joules
 
 # Integrate solar radiation data
 def integrateSolarRadiation(data:pd.DataFrame):
+    print("Integrating solar radiation")
     dates = list(data.index.get_level_values('time').unique())
     coords = [[lat, lon] for lat in lat_range for lon in lon_range]
     values = []
@@ -245,6 +253,7 @@ def integrateSolarRadiation(data:pd.DataFrame):
 
 # Modify coordinates in xarray dataset
 def modifyCoordinates(data:xarray.Dataset):
+    print("Modifying grid coordinates.")
     for var in list(data.data_vars):
         varArray:xarray.DataArray = data[var]
         nonIndices = list(set(list(varArray.coords)).difference(set(AssignCoordinates.coordinates[var])))
@@ -254,12 +263,14 @@ def modifyCoordinates(data:xarray.Dataset):
 
 # Convert pandas dataframe to xarray dataset
 def makeXarray(data:pd.DataFrame) -> xarray.Dataset:
+    print("Creating XArray.")
     data = data.to_xarray()
     data = modifyCoordinates(data)
     return data
 
 # Format data for prediction
 def formatData(data:pd.DataFrame) -> pd.DataFrame:
+    print("Formatting data.")
     data = data.rename_axis(index = {'latitude': 'lat', 'longitude': 'lon'})
     if 'batch' not in data.index.names:
         data['batch'] = 0
@@ -268,6 +279,7 @@ def formatData(data:pd.DataFrame) -> pd.DataFrame:
 
 # Generate target data for prediction
 def getTargets(dt, data:pd.DataFrame):
+    print("Getting target data.")
     lat, lon, levels, batch = sorted(data.index.get_level_values('lat').unique().tolist()), sorted(data.index.get_level_values('lon').unique().tolist()), sorted(data.index.get_level_values('level').unique().tolist()), data.index.get_level_values('batch').unique().tolist()
     time = [deltaTime(dt, hours = days * gap) for days in range(predictions_steps)]
     target = xarray.Dataset({field: (['lat', 'lon', 'level', 'time'], nans(len(lat), len(lon), len(levels), len(time))) for field in predictionFields}, coords = {'lat': lat, 'lon': lon, 'level': levels, 'time': time, 'batch': batch})
@@ -275,6 +287,7 @@ def getTargets(dt, data:pd.DataFrame):
 
 # Generate forcing data for prediction
 def getForcings(data:pd.DataFrame):
+    print("Getting forcings data.")
     forcingdf = data.reset_index(level = 'level', drop = True).drop(labels = predictionFields, axis = 1)
     forcingdf = pd.DataFrame(index = forcingdf.index.drop_duplicates(keep = 'first'))
     forcingdf = integrateProgress(forcingdf)
@@ -304,7 +317,8 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
     for location_name, (lat, lon, station_id) in location_options.items():
         values: Dict[str, xarray.Dataset] = {}
 
-        if year in range(2022, 2025):
+        if year in range(2022, 2023):     # <-------- Year validation only for testing
+            print("Getting single level and pressure level values")
             single, pressure = getSingleAndPressureValues(year, month, data_bucket_name)
             values['inputs'] = pd.merge(pressure, single, left_index=True, right_index=True, how='inner')
             values['inputs'] = values['inputs'].xs((lat, lon), level=('lat', 'lon'))
@@ -313,14 +327,18 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
             current_time = datetime.datetime(year, month, init_date.day, 6, 0)  # Start at 6:00 AM
             end_time = current_time + datetime.timedelta(hours=6 * forecast_steps)  # Calculate end time based on steps
 
+            print("Rolling out forecast steps")
             while current_time < end_time:
                 try:
+                    print("Getting forecast predictions at step.")
                     values['inputs'] = values['inputs'].loc[pd.Timestamp(current_time.year, current_time.month, current_time.day, current_time.hour, current_time.minute)]
                     values['targets'] = getTargets(first_prediction, values['inputs'])
                     values['forcings'] = getForcings(values['targets'])
                     values = {value: makeXarray(values[value]) for value in values}
+                    print("making predictions for step.")
                     predictions = Predictor.predict(values['inputs'], values['targets'], values['forcings'])
 
+                    print("Preparing forecast step info")
                     forecast_step = {
                         'init_time': init_date.isoformat(),  # ISO format for init_date
                         'station_id': station_id,
@@ -331,11 +349,13 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
                     for field in predictionFields:
                         forecast_step[field] = predictions[field].sel(time=pd.Timestamp(current_time), method='nearest').values.tolist()
 
+                    print("Adding forecast step prediction to results.")
                     forecast_results.append(forecast_step)
 
                 except KeyError:
                     print(f"Warning: No forecast data found for time {current_time}. Skipping.")
 
+                print("Moving to next forecast step.")
                 current_time += datetime.timedelta(hours=6)  # Increment by 6 hours
 
         else:
@@ -375,10 +395,12 @@ def write_to_bigquery(forecast_results: List[Dict]):
 
 def main(init_date_str, forecast_steps):  # Accept parameters
     try:
+        print("Starting main method.")
         init_date = datetime.datetime.strptime(init_date_str, '%Y-%m-%d')
         forecast_results = generate_forecast_batch(init_date, forecast_steps)
 
         # Write the results to BigQuery
+        print("Writing forecast results to BigQuery")
         write_to_bigquery(forecast_results)
 
         print('Batch forecast generated and written to BigQuery')
@@ -388,5 +410,7 @@ def main(init_date_str, forecast_steps):  # Accept parameters
 
 if __name__ == '__main__':
     init_date_str = sys.argv[1]  # Get init_date from command-line arguments
+    print('Forecast Init time: {}'.format(init_date_str))
     forecast_steps = int(sys.argv[2])  # Get forecast_steps from command-line arguments
+    print("Forecast steps: {}".format(forecast_steps))
     main(init_date_str, forecast_steps)  # Pass arguments to main function
