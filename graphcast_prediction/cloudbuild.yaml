@@ -3,5 +3,31 @@ steps:
   args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/elet-meteorologia-graphcast-dev/graphcast:latest', '.']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/elet-meteorologia-graphcast-dev/graphcast:latest']
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - 'compute'
+  - 'tpus'
+  - 'create'
+  - 'elet-graphcast-tpu-vm3'
+  - '--zone=us-central1-a'
+  - '--accelerator-type=v3-8'
+  - '--version=tpu-vm-tf-2.11.0'
+  - '--preemptible'  # Optional: Use a preemptible TPU
+  - '--metadata=startup-script='
+  - |
+    #!/bin/bash
+    # Install docker
+    sudo apt-get update && sudo apt-get install -y docker.io
+    # Start docker service
+    sudo systemctl enable docker.service
+    sudo systemctl start docker.service
+    # Pull your docker image
+    docker pull us-central1-docker.pkg.dev/$PROJECT_ID/elet-meteorologia-graphcast-dev/graphcast:latest
+
+    # Grant permissions to the user to execute docker commands without sudo
+    sudo usermod -aG docker $USER
+
+    # This line is necessary to ensure the changes take effect immediately
+    newgrp docker
 images:
 - 'us-central1-docker.pkg.dev/$PROJECT_ID/elet-meteorologia-graphcast-dev/graphcast:latest'
