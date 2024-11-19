@@ -1,9 +1,0 @@
-docker run -it \
-    -e GRAPHCAST_DATA_BUCKET=gs://elet-dm-graphcast/dataset \
-    -e GRAPHCAST_PARAMS_BUCKET=gs://elet-dm-graphcast/params \
-    -e GRAPHCAST_STATS_BUCKET=gs://elet-dm-graphcast/stats \
-    -e GRAPHCAST_MODEL_PATH="gs://elet-dm-graphcast/params/GraphCast_operational.npz" \
-    -e JAX_PLATFORM_NAME=tpu \
-    -e JAX_TPU_DRIVER_MODE=async \
-    eletrobras/graphcast:latest \
-    python3 predictions.py 2022-01-01 10
