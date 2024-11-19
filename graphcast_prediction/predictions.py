@@ -102,9 +102,9 @@ class AssignCoordinates:
     }
 
 # Load model parameters and configurations
-params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'gs://elet-dm-graphcast/params')
-stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'gs://elet-dm-graphcast/stats')
-model_path = os.environ.get('GRAPHCAST_MODEL_PATH', 'GraphCast_operational.npz')
+params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'elet-dm-graphcast/params')
+stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'let-dm-graphcast/stats')
+model_path = os.environ.get('GRAPHCAST_MODEL_PATH','GraphCast_operational.npz')
 
 
 with gcs_bucket.blob(f'{params_bucket_name}/{model_path}').open('rb') as model:
