@@ -1,4 +1,4 @@
-sudo docker run -it \
+docker run -it \
     -e GRAPHCAST_DATA_BUCKET=gs://elet-dm-graphcast/dataset \
     -e GRAPHCAST_PARAMS_BUCKET=gs://elet-dm-graphcast/params \
     -e GRAPHCAST_STATS_BUCKET=gs://elet-dm-graphcast/stats \
