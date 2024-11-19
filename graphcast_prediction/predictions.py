@@ -103,7 +103,7 @@ class AssignCoordinates:
 
 # Load model parameters and configurations
 params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'elet-dm-graphcast/params')
-stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'let-dm-graphcast/stats')
+stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'elet-dm-graphcast/stats')
 model_path = os.environ.get('GRAPHCAST_MODEL_PATH','GraphCast_operational.npz')
 
 
