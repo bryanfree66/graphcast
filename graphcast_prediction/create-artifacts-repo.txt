@@ -1,5 +1,0 @@
-gcloud artifacts repositories create elet-meteorologia-graphcast-dev --repository-format=docker --location=us-central1
-
-gcloud artifacts repositories add-iam-policy-binding elet-meteorologia-graphcast-dev --member='user:bryanfreeman@google.com' --role='roles/editor' --location=us-central1
-
-gcloud artifacts repositories describe elet-meteorologia-graphcast-dev --project=bryan-dev-396914 --location=us-central1

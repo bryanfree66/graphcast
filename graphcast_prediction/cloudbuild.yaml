@@ -12,8 +12,7 @@ steps:
   - '--zone=us-central1-a'
   - '--accelerator-type=v3-8'
   - '--version=tpu-vm-tf-2.11.0'
-  - '--preemptible'  # Optional: Use a preemptible TPU
-  - '--metadata-from-file'
-  - 'startup-script=startup.sh'
+#  - '--preemptible'  # Optional: Use a preemptible TPU
+  - '--metadata-from-file=startup-script=startup.sh'
 images:
 - 'us-central1-docker.pkg.dev/$PROJECT_ID/elet-meteorologia-graphcast-dev/graphcast:latest'

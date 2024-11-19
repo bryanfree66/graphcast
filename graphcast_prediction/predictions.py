@@ -47,6 +47,15 @@ singlelevelfields = [
     'total_precipitation'
 ]
 
+pressurelevelfields = [
+    'u_component_of_wind',
+    'v_component_of_wind',
+    'geopotential',
+    'specific_humidity',
+    'temperature',
+    'vertical_velocity'
+]
+
 predictionFields = [
     'u_component_of_wind',
     'v_component_of_wind',
@@ -117,7 +126,7 @@ with open(f'{stats_bucket_name}/stddev_by_level.nc', 'rb') as f:
 
 # Construct the GraphCast predictor
 def construct_wrapped_graphcast(model_config:graphcast.ModelConfig, task_config:graphcast.TaskConfig):
-    print("Constructing wrapped Graphcast predictor")
+    print("Constructing wrapped Graphcast")
     predictor = graphcast.GraphCast(model_config, task_config)
     predictor = casting.Bfloat16Cast(predictor)
     predictor = normalization.InputsAndResiduals(predictor, diffs_stddev_by_level = diffs_stddev_by_level, mean_by_level = mean_by_level, stddev_by_level = stddev_by_level)
