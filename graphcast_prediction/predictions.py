@@ -137,9 +137,9 @@ with blob.open('rb') as model:
 print("Loading statistical data\n")
 
 # Construct the full paths to the statistical data files
-diffs_stddev_path = f"{gcs_bucket_name}/{stats_bucket_name}/diffs_stddev_by_level.nc"
-mean_path = f"{gcs_bucket_name}/{stats_bucket_name}/mean_by_level.nc"
-stddev_path = f"{gcs_bucket_name}/{stats_bucket_name}/stddev_by_level.nc"
+diffs_stddev_path = f"{stats_bucket_name}/diffs_stddev_by_level.nc"
+mean_path = f"{stats_bucket_name}/mean_by_level.nc"
+stddev_path = f"{stats_bucket_name}/stddev_by_level.nc"
 
 # Load diffs_stddev_by_level.nc
 blob = bucket.blob(diffs_stddev_path)
