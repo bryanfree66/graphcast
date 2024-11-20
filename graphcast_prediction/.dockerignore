@@ -2,11 +2,9 @@
 graphcast_env/
 
 # Ignore Git-related files and directories
-.git/
-.gitignore
+../.git/
+../.gitignore
 
-# Ignore the BigQuery schema file
-bigquery_schema.sql
 
 # Ignore common temporary files and directories
 __pycache__/
@@ -14,3 +12,14 @@ __pycache__/
 *.pyo
 .DS_Store
 Thumbs.db
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore editor backup files
+*~
+*.swp
+
+# Ignore IDE project files (if applicable)
+.idea/
+.vscode/

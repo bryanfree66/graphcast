@@ -1,3 +1,9 @@
+# Ignore the dataset folder
+dataset/
+
+# Ignore the notebooks folder
+notebooks/
+
 # Ignore test files
 test/*
 
@@ -10,30 +16,23 @@ test/*
 # Ignore temporary files
 temp/
 
+# Ignore .git
+.git/
+
 # Ignore build script
 build_deploy.py
 
 # Ignore virtual environment directories
-graphcast_env/
-
-# Ignore Jupyter Notebook checkpoints
-.ipynb_checkpoints/
+graphcast_prediction/graphcast_env/
 
 # Ignore editor backup files
 *~
 *.swp
 
-# Ignore PyCharm project files
-.idea/
-
 # Ignore VS Code project files
 .vscode/
 
-# Ignore hidden files (except .dockerignore)
+# Ignore hidden files (except .dockerignore and .gcloudignore)
 .*
 !.dockerignore
-
-# Ignore data files (if they are large and not needed for the build)
-# dataset/
-# params/
-# stats/
+!.gcloudignore 
