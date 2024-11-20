@@ -25,9 +25,9 @@ RUN pip3 install shapely --no-binary shapely
 RUN pip3 install jax[tpu] -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
 
 # Set environment variables for data access
-ENV GRAPHCAST_DATA_BUCKET "elet-dm-graphcast/dataset"
-ENV GRAPHCAST_PARAMS_BUCKET "elet-dm-graphcast/params"
-ENV GRAPHCAST_STATS_BUCKET "elet-dm-graphcast/stats"
+ENV GRAPHCAST_DATA_BUCKET "dataset"
+ENV GRAPHCAST_PARAMS_BUCKET "params"
+ENV GRAPHCAST_STATS_BUCKET "stats"
 ENV GRAPHCAST_MODEL_PATH "GraphCast_operational.npz"
 
 # Set environment variables for TPU

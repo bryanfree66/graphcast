@@ -33,7 +33,7 @@ os.environ['JAX_TPU_DRIVER_MODE'] = 'async'
 
 # Configure Google Cloud Storage
 client = storage.Client.create_anonymous_client()
-gcs_bucket = client.get_bucket("dm_graphcast")
+gcs_bucket = client.get_bucket("elet_dm_graphcast")
 
 # Define fields and parameters
 singlelevelfields = [
@@ -102,8 +102,8 @@ class AssignCoordinates:
     }
 
 # Load model parameters and configurations
-params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'elet-dm-graphcast/params')
-stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'elet-dm-graphcast/stats')
+params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'params')
+stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'stats')
 model_path = os.environ.get('GRAPHCAST_MODEL_PATH','GraphCast_operational.npz')
 
 
