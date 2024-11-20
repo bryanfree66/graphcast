@@ -4,6 +4,9 @@ test/*
 # Ignore log files
 *.log
 
+# Ignore sql files
+*.sql
+
 # Ignore temporary files
 temp/
 
