@@ -110,14 +110,12 @@ class AssignCoordinates:
 
 # Load model parameters and configurations
 print("Loading model parameters and configurations\n")
-params_bucket_name = os.environ.get(
-    'GRAPHCAST_PARAMS_BUCKET', 'gs://elet-dm-graphcast/params')
 model_path = os.environ.get('GRAPHCAST_MODEL_PATH',
                             'GraphCast_operational.npz')
 
-# Remove params_bucket_name from here
 with gcs_bucket.blob(f'{model_path}').open('rb') as model:
     ckpt = checkpoint.load(model, graphcast.CheckPoint)
+    params = ckpt.params
     state = {}
     model_config = ckpt.model_config
     task_config = ckpt.task_config
