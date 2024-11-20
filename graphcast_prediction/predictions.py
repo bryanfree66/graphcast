@@ -119,7 +119,7 @@ model_path = os.environ.get('GRAPHCAST_MODEL_PATH',
 # Load model parameters and configurations
 print("Loading model parameters and configurations\n")
 # Construct the full path to the model file
-model_path = f"{gcs_bucket_name}/{params_bucket_name}/{model_path}"
+model_path = f"{params_bucket_name}/{model_path}"
 
 # Access the model file using the Storage client and the full path
 client = storage.Client()
