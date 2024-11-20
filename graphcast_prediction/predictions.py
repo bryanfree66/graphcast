@@ -2,6 +2,7 @@
 from typing import List, Dict
 import datetime
 import functools
+import google.auth
 from google.cloud import storage
 from graphcast import autoregressive, casting, checkpoint, data_utils as du, graphcast, normalization, rollout
 import haiku as hk
@@ -27,9 +28,12 @@ location_options = {
     "Paraíba do Sul": (-22.16, -43.29, "RESA-PLUH")
 }
 
+# Obtain the default credentials
+credentials, project_id = google.auth.default()
+
 # Configure Google Cloud Storage
 graphcast_bucket_name = os.environ.get('GRAPHCAST_BUCKET_NAME', 'elet-dm-graphcast')
-client = storage.Client.create_anonymous_client()
+client = storage.Client.create_anonymous_client(credentials=credentials)
 gcs_bucket = client.get_bucket("elet-dm-graphcast")
 
 # Define fields and parameters
