@@ -1,11 +1,6 @@
 # Ignore the virtual environment directory
 graphcast_env/
 
-# Ignore Git-related files and directories
-../.git/
-../.gitignore
-
-
 # Ignore common temporary files and directories
 __pycache__/
 *.pyc
