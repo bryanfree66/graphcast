@@ -108,12 +108,23 @@ class AssignCoordinates:
     }
 
 
+# Check if GRAPHCAST_BUCKET_NAME environment variable is set
+gcs_bucket_name = os.environ.get('GRAPHCAST_BUCKET_NAME', 'elet-dm-graphcast')
+params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'params')
+stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'params')
+data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'params')
+
 # Load model parameters and configurations
 print("Loading model parameters and configurations\n")
-model_path = os.environ.get('GRAPHCAST_MODEL_PATH',
-                            'GraphCast_operational.npz')
+# Construct the full path to the model file
+model_path = f"{gcs_bucket_name}/{params_bucket_name}/{model_name}"
 
-with gcs_bucket.blob(f'{model_path}').open('rb') as model:
+# Access the model file using the Storage client and the full path
+client = storage.Client()
+bucket = client.get_bucket(gcs_bucket_name)
+blob = bucket.blob(model_path)
+
+with blob.open('rb') as model:
     ckpt = checkpoint.load(model, graphcast.CheckPoint)
     params = ckpt.params
     state = {}
@@ -122,18 +133,24 @@ with gcs_bucket.blob(f'{model_path}').open('rb') as model:
 
 # Load statistical data
 print("Loading statistical data\n")
+
+# Construct the full paths to the statistical data files
+diffs_stddev_path = f"{gcs_bucket_name}/{stats_bucket_name}/diffs_stddev_by_level.nc"
+mean_path = f"{gcs_bucket_name}/{stats_bucket_name}/mean_by_level.nc"
+stddev_path = f"{gcs_bucket_name}/{stats_bucket_name}/stddev_by_level.nc"
+
 # Load diffs_stddev_by_level.nc
-blob = gcs_bucket.blob(f'{stats_bucket_name}/diffs_stddev_by_level.nc')
+blob = bucket.blob(diffs_stddev_path)
 with blob.open('rb') as f:
     diffs_stddev_by_level = xarray.load_dataset(f).compute()
 
 # Load mean_by_level.nc
-blob = gcs_bucket.blob(f'{stats_bucket_name}/mean_by_level.nc')
+blob = bucket.blob(mean_path)
 with blob.open('rb') as f:
     mean_by_level = xarray.load_dataset(f).compute()
 
 # Load stddev_by_level.nc
-blob = gcs_bucket.blob(f'{stats_bucket_name}/stddev_by_level.nc')
+blob = bucket.blob(stddev_path)
 with blob.open('rb') as f:
     stddev_by_level = xarray.load_dataset(f).compute()
 
