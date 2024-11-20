@@ -25,10 +25,10 @@ WORKDIR /app
 COPY . .
 
 # Set environment variables for data access
-ENV GRAPHCAST_DATA_BUCKET "dataset"
-ENV GRAPHCAST_PARAMS_BUCKET "params"
-ENV GRAPHCAST_STATS_BUCKET "stats"
-ENV GRAPHCAST_MODEL_PATH "GraphCast_operational.npz"
+ENV GRAPHCAST_DATA_BUCKET "gs://elet-dm-graphcast/dataset" 
+ENV GRAPHCAST_PARAMS_BUCKET "gs://elet-dm-graphcast/params" 
+ENV GRAPHCAST_STATS_BUCKET "gs://elet-dm-graphcast/stats"
+ENV GRAPHCAST_MODEL_PATH "GraphCast_operational.npz" 
 
 # Set environment variables for TPU
 ENV JAX_PLATFORM_NAME tpu

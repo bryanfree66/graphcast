@@ -6,7 +6,7 @@ def build_and_deploy():
   try:
     # Step 1: Build the application using gcloud
     subprocess.run(["gcloud", "builds", "submit", "--config", "cloudbuild.yaml", "."], check=True)
-    print("Application build successful!")
+    print("Application build successful!\n")
 
     # Step 2: SSH into the TPU VM
     ssh_command = [
@@ -15,7 +15,7 @@ def build_and_deploy():
         "-o", "ProxyCommand='corp-ssh-helper %h %p'"
     ]
     subprocess.run(ssh_command, check=True)
-    print("Successfully connected to TPU VM.")
+    print("Successfully connected to TPU VM.\n")
 
     # Steps 3 & 4:  Pull and run the Docker image (combined)
     docker_commands = [
