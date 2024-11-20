@@ -1,28 +1,28 @@
-# Get ubuntu image from https://hub.docker.com/_/ubuntu.
-FROM ubuntu:22.04
+FROM python:3.9
 
 # Update ubuntu's package installer and download python and other important packages.
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update
-RUN apt-get install -y python3 python3-pip curl unzip sudo
+RUN apt-get update && \
+    apt-get install -y curl unzip sudo libgeos-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Download components required by Graphcast.
-RUN pip3 install --upgrade https://github.com/deepmind/graphcast/archive/master.zip
-# RUN pip3 install git+https://github.com/deepmind/dm-haiku
+# Create virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install shapely --no-binary shapely && \
+    pip install jax[tpu] -f https://storage.googleapis.com/jax-releases/libtpu_releases.html && \
+    pip install --upgrade https://github.com/deepmind/graphcast/archive/master.zip
 
 # Create app directory.
-RUN mkdir -p /app
 WORKDIR /app
 
 # Copy all files to environment.
 COPY . .
-
-# Download necessary packages.
-RUN sudo apt-get install -y libgeos-dev
-RUN pip3 uninstall -y shapely
-RUN pip3 install -r requirements.txt
-RUN pip3 install shapely --no-binary shapely
-RUN pip3 install jax[tpu] -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
 
 # Set environment variables for data access
 ENV GRAPHCAST_DATA_BUCKET "dataset"
