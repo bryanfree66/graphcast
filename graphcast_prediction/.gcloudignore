@@ -10,6 +10,9 @@ test/*
 # Ignore temporary files
 temp/
 
+# Ignore build script
+build_deploy.py
+
 # Ignore virtual environment directories
 graphcast_env/
 
