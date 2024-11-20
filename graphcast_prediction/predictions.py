@@ -108,6 +108,7 @@ class AssignCoordinates:
     }
 
 # Load model parameters and configurations
+print("Loading model parameters and configurations\n")
 params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'params')
 stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'stats')
 model_path = os.environ.get('GRAPHCAST_MODEL_PATH','GraphCast_operational.npz')
@@ -121,6 +122,7 @@ with gcs_bucket.blob(f'{params_bucket_name}/{model_path}').open('rb') as model:
     task_config = ckpt.task_config
 
 # Load statistical data
+print("Loading statistical data\n")
 with open(f'{stats_bucket_name}/diffs_stddev_by_level.nc', 'rb') as f:
     diffs_stddev_by_level = xarray.load_dataset(f).compute()
 
