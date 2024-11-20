@@ -33,7 +33,7 @@ os.environ['JAX_TPU_DRIVER_MODE'] = 'async'
 
 # Configure Google Cloud Storage
 client = storage.Client.create_anonymous_client()
-gcs_bucket = client.get_bucket("elet_dm_graphcast")
+gcs_bucket = client.get_bucket("elet-dm-graphcast")
 
 # Define fields and parameters
 singlelevelfields = [
