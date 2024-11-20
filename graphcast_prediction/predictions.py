@@ -19,6 +19,8 @@ from typing import Dict
 import xarray
 import os
 
+# Define location options
+print("Defining location options\n")
 location_options = {
     "Foz de Iguazu": (-25.26, -54.32, "A846"),
     "Grajau": (-22.93, -43.26, "A636"),
@@ -29,14 +31,17 @@ location_options = {
 }
 
 # Obtain the default credentials
+print("Obtaining default credentials\n")
 credentials, project_id = google.auth.default()
 
 # Configure Google Cloud Storage
+print("Configuring Google Cloud Storage\n")
 graphcast_bucket_name = os.environ.get('GRAPHCAST_BUCKET_NAME', 'elet-dm-graphcast')
-client = storage.Client.create_anonymous_client(credentials=credentials)
+client = storage.Client()
 gcs_bucket = client.get_bucket("elet-dm-graphcast")
 
 # Define fields and parameters
+print("Defining fields and parameters\n")
 singlelevelfields = [
     '10m_u_component_of_wind',
     '10m_v_component_of_wind',
