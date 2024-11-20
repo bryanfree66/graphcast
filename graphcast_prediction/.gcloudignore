@@ -1,0 +1,33 @@
+# Ignore test files
+test/*
+
+# Ignore log files
+*.log
+
+# Ignore temporary files
+temp/
+
+# Ignore virtual environment directories
+graphcast_env/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore editor backup files
+*~
+*.swp
+
+# Ignore PyCharm project files
+.idea/
+
+# Ignore VS Code project files
+.vscode/
+
+# Ignore hidden files (except .dockerignore)
+.*
+!.dockerignore
+
+# Ignore data files (if they are large and not needed for the build)
+# dataset/
+# params/
+# stats/
