@@ -111,13 +111,15 @@ class AssignCoordinates:
 # Check if GRAPHCAST_BUCKET_NAME environment variable is set
 gcs_bucket_name = os.environ.get('GRAPHCAST_BUCKET_NAME', 'elet-dm-graphcast')
 params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'params')
-stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'params')
-data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'params')
+stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'stats')
+data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'dataset')
+model_path = os.environ.get('GRAPHCAST_MODEL_PATH',
+                            '"GraphCast_operational.npz"')
 
 # Load model parameters and configurations
 print("Loading model parameters and configurations\n")
 # Construct the full path to the model file
-model_path = f"{gcs_bucket_name}/{params_bucket_name}/{model_name}"
+model_path = f"{gcs_bucket_name}/{params_bucket_name}/{model_path}"
 
 # Access the model file using the Storage client and the full path
 client = storage.Client()
