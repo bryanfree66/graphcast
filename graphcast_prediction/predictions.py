@@ -27,11 +27,8 @@ location_options = {
     "Paraíba do Sul": (-22.16, -43.29, "RESA-PLUH")
 }
 
-# Set environment variables for TPU
-os.environ['JAX_PLATFORM_NAME'] = 'tpu'
-os.environ['JAX_TPU_DRIVER_MODE'] = 'async'
-
 # Configure Google Cloud Storage
+graphcast_bucket_name = os.environ.get('GRAPHCAST_BUCKET_NAME', 'elet-dm-graphcast')
 client = storage.Client.create_anonymous_client()
 gcs_bucket = client.get_bucket("elet-dm-graphcast")
 
