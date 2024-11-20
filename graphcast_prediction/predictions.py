@@ -124,13 +124,19 @@ with gcs_bucket.blob(f'{model_path}').open('rb') as model:
 
 # Load statistical data
 print("Loading statistical data\n")
-with open(f'{stats_bucket_name}/diffs_stddev_by_level.nc', 'rb') as f:
+# Load diffs_stddev_by_level.nc
+blob = gcs_bucket.blob(f'{stats_bucket_name}/diffs_stddev_by_level.nc')
+with blob.open('rb') as f:
     diffs_stddev_by_level = xarray.load_dataset(f).compute()
 
-with open(f'{stats_bucket_name}/mean_by_level.nc', 'rb') as f:
+# Load mean_by_level.nc
+blob = gcs_bucket.blob(f'{stats_bucket_name}/mean_by_level.nc')
+with blob.open('rb') as f:
     mean_by_level = xarray.load_dataset(f).compute()
 
-with open(f'{stats_bucket_name}/stddev_by_level.nc', 'rb') as f:
+# Load stddev_by_level.nc
+blob = gcs_bucket.blob(f'{stats_bucket_name}/stddev_by_level.nc')
+with blob.open('rb') as f:
     stddev_by_level = xarray.load_dataset(f).compute()
 
 # Construct the GraphCast predictor
