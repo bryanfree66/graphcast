@@ -1,5 +1,5 @@
 # Ignore the dataset folder
-dataset/
+cdp_data_retriever/
 
 # Ignore the notebooks folder
 notebooks/

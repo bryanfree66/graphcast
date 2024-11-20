@@ -13,9 +13,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Ignore Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
 # Ignore editor backup files
 *~
 *.swp
