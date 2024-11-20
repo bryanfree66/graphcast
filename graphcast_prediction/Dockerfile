@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.10
 
 # Update ubuntu's package installer and download python and other important packages.
 ENV DEBIAN_FRONTEND=noninteractive
