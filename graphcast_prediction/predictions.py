@@ -219,7 +219,7 @@ def addTimezone(dt, tz = pytz.UTC) -> datetime.datetime:
         return dt.astimezone(tz)
 
 # Load ERA5 data for a single year and month
-def getSingleAndPressureValues(year, month, data_bucket_name):
+def getSingleAndPressureValues(year, month):
     """
     Loads single-level and pressure-level data for the specified year and month.
 
@@ -233,20 +233,36 @@ def getSingleAndPressureValues(year, month, data_bucket_name):
             - singlelevel: DataFrame with single-level data.
             - pressurelevel: DataFrame with pressure-level data.
     """
-    print("Loading pressure level data from GCS\n")
-    singlelevel = xarray.open_dataset(f'{gcs_bucket_name}/single-level-{year}-{month:02d}.nc',
-                                      engine=scipy.__name__).to_dataframe()
+
+    # Construct the full paths to the data files
+    single_level_path = f"{data_bucket_name}/single-level-{year}-{month:02d}.nc"
+    pressure_level_path = f"{data_bucket_name}/pressure-level-{year}-{month:02d}.nc"
+
+    # Access the data files using the Storage client
+    client = storage.Client()  # Create a Storage client
+    bucket = client.get_bucket(gcs_bucket_name)  # Get the bucket
+
+    # Load single-level data
+    blob = bucket.blob(single_level_path)
+    with blob.open('rb') as f:
+        singlelevel = xarray.open_dataset(f, engine=scipy.__name__).to_dataframe()
+    
     singlelevel = singlelevel.rename(columns={col: singlelevelfields[ind] for ind, col in enumerate(singlelevel.columns.values.tolist())})
     singlelevel = singlelevel.rename(columns={'geopotential': 'geopotential_at_surface'})
 
     # Calculating the sum of the last 6 hours of rainfall.
     singlelevel = singlelevel.sort_index()
-    singlelevel['total_precipitation_6hr'] = singlelevel.groupby(level=[0, 1])['total_precipitation'].rolling(window=6, min_periods=1).sum().reset_index(level=[0, 1], drop=True)
+    singlelevel['total_precipitation_6hr'] = singlelevel.groupby(level=[0, 1])['total_precipitation'].rolling(
+        window=6, min_periods=1).sum().reset_index(level=[0, 1], drop=True)
     singlelevel.pop('total_precipitation')
 
-    pressurelevel = xarray.open_dataset(
-        f'{gcs_bucket_name}/pressure-level-{year}-{month:02d}.nc', engine=scipy.__name__).to_dataframe()  # Use gcs_bucket_name
-    pressurelevel = pressurelevel.rename(columns={col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
+    # Load pressure-level data
+    blob = bucket.blob(pressure_level_path)
+    with blob.open('rb') as f:
+        pressurelevel = xarray.open_dataset(
+            f, engine=scipy.__name__).to_dataframe()
+    pressurelevel = pressurelevel.rename(columns={
+                                         col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
 
     return singlelevel, pressurelevel
 
@@ -350,7 +366,7 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
         A list of dictionaries, where each dictionary represents a forecast record
         for a specific location, time, and prediction variables.
     """
-    data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'gs://elet-dm-graphcast/dataset')
+    # data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'gs://elet-dm-graphcast/dataset')
 
     # Determine the month for file retrieval
     month = init_date.month
@@ -453,8 +469,8 @@ def main(init_date_str, forecast_steps):  # Accept parameters
         print(f'Error: {str(e)}\n')
 
 if __name__ == '__main__':
-    init_date_str = sys.argv[1]  # Get init_date from command-line arguments
+    init_date_str =  '2022-01-01' #sys.argv[1]  # Get init_date from command-line arguments
     print('Forecast Init time: {}\n'.format(init_date_str))
-    forecast_steps = int(sys.argv[2])  # Get forecast_steps from command-line arguments
+    forecast_steps = 10 #int(sys.argv[2])  # Get forecast_steps from command-line arguments
     print("Forecast steps: {}\n".format(forecast_steps))
     main(init_date_str, forecast_steps)  # Pass arguments to main function
