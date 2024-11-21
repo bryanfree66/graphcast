@@ -17,7 +17,7 @@ import pytz
 import scipy
 from typing import Dict
 import xarray
-import netcdf4
+# import netcdf4
 import os
 import sys
 
