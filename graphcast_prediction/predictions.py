@@ -17,7 +17,7 @@ import pytz
 import scipy
 from typing import Dict
 import xarray
-# import netcdf4
+import netCDF4
 import os
 import sys
 
@@ -244,7 +244,7 @@ def getSingleAndPressureValues(year, month):
     bucket = client.get_bucket(gcs_bucket_name)  # Get the bucket
 
     # Load single-level data
-    print("loading file: {}".format(single_level_path))
+    print("loading file: {}\n".format(single_level_path))
     blob = bucket.blob(single_level_path)
     with blob.open('rb') as f:
         singlelevel = xarray.open_dataset(f, engine=scipy.__name__).to_dataframe()
@@ -259,7 +259,7 @@ def getSingleAndPressureValues(year, month):
     singlelevel.pop('total_precipitation')
 
     # Load pressure-level data
-    print("loading file: {}".format(pressure_level_path))
+    print("loading file: {}\n".format(pressure_level_path))
     blob = bucket.blob(pressure_level_path)
     with blob.open('rb') as f:
         pressurelevel = xarray.open_dataset(
