@@ -18,6 +18,7 @@ import scipy
 from typing import Dict
 import xarray
 import os
+import sys
 
 # Define location options
 print("Defining location options\n")
