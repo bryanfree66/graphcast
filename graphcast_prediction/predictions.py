@@ -379,7 +379,7 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
 
         if year in range(2022, 2023):     # <-------- Year validation only for testing
             print("Getting single level and pressure level values\n")
-            single, pressure = getSingleAndPressureValues(year, month, data_bucket_name)
+            single, pressure = getSingleAndPressureValues(year, month)
             values['inputs'] = pd.merge(pressure, single, left_index=True, right_index=True, how='inner')
             values['inputs'] = values['inputs'].xs((lat, lon), level=('lat', 'lon'))
 
