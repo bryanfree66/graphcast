@@ -16,7 +16,7 @@ from pysolar.solar import get_altitude
 import pytz
 import scipy
 from typing import Dict
-import xarray
+import xarray as xr
 import netCDF4
 import os
 import sys
@@ -244,11 +244,14 @@ def getSingleAndPressureValues(year, month):
     bucket = client.get_bucket(gcs_bucket_name)  # Get the bucket
 
     # Load single-level data
-    print("loading file: {}\n".format(single_level_path))
+    print("loading file: gs://{}/{}\n".format(gcs_bucket_name, single_level_path))
     blob = bucket.blob(single_level_path)
+
     with blob.open('rb') as f:
-        singlelevel = xarray.open_dataset(f, engine=scipy.__name__).to_dataframe()
-    
+        data = f.read()  # Read the file contents into memory
+        nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
+        singlelevel = xarray.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+        
     singlelevel = singlelevel.rename(columns={col: singlelevelfields[ind] for ind, col in enumerate(singlelevel.columns.values.tolist())})
     singlelevel = singlelevel.rename(columns={'geopotential': 'geopotential_at_surface'})
 
@@ -261,11 +264,13 @@ def getSingleAndPressureValues(year, month):
     # Load pressure-level data
     print("loading file: {}\n".format(pressure_level_path))
     blob = bucket.blob(pressure_level_path)
+
     with blob.open('rb') as f:
-        pressurelevel = xarray.open_dataset(
-            f, engine=scipy.__name__).to_dataframe()
-    pressurelevel = pressurelevel.rename(columns={
-                                         col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
+        data = f.read()  # Read the file contents into memory
+        nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
+        pressurelevel = xarray.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+    
+    pressurelevel = pressurelevel.rename(columns={col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
 
     return singlelevel, pressurelevel
 
