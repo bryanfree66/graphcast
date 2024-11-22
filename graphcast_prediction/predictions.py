@@ -274,14 +274,17 @@ def getSingleAndPressureValues(year, month):
     # Load pressure-level data
     print("loading file: {}\n".format(pressure_level_path))
     
-
     # Load pressure-level data using netCDF4
     blob = bucket.blob(pressure_level_path)
     with blob.open('rb') as f:
+        print("Reading pressure level data\n")
         data = f.read()  # Read the file contents into memory
+        print("Reading pressure level NetCDF4 data into memory\n")
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
+        print("Converting pressure level data into xarray dataset\n")
         pressurelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
     
+    print(f"Renaming pressure level columns using values from list\n")
     pressurelevel = pressurelevel.rename(columns={col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
 
     return singlelevel, pressurelevel
