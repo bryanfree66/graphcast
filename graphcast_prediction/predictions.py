@@ -111,7 +111,7 @@ class AssignCoordinates:
 
 
 # Check if GRAPHCAST_BUCKET_NAME environment variable is set
-gcs_bucket_name = os.environ.get('GRAPHCAST_BUCKET_NAME', 'elet-dm-graphcast')
+#gcs_bucket_name = os.environ.get('GRAPHCAST_BUCKET_NAME', 'elet-dm-graphcast')
 params_bucket_name = os.environ.get('GRAPHCAST_PARAMS_BUCKET', 'params')
 stats_bucket_name = os.environ.get('GRAPHCAST_STATS_BUCKET', 'stats')
 data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'dataset')
@@ -283,6 +283,11 @@ def getSingleAndPressureValues(year, month):
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
         print("Converting pressure level data into xarray dataset\n")
         pressurelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+    
+    # Drop the 'number' and 'expver' columns
+    pressurelevel = pressurelevel.drop(columns=['number', 'expver'])
+    # DEBUG checking column names
+    print("Pressure-level columns:{}\n".format(pressurelevel.columns))
     
     print(f"Renaming pressure level columns using values from list\n")
     pressurelevel = pressurelevel.rename(columns={col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
