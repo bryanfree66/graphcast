@@ -273,8 +273,10 @@ def getSingleAndPressureValues(year, month):
 
     # Load pressure-level data
     print("loading file: {}\n".format(pressure_level_path))
-    blob = bucket.blob(pressure_level_path)
+    
 
+    # Load pressure-level data using netCDF4
+    blob = bucket.blob(pressure_level_path)
     with blob.open('rb') as f:
         data = f.read()  # Read the file contents into memory
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
