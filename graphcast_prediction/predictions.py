@@ -146,17 +146,17 @@ stddev_path = f"{stats_bucket_name}/stddev_by_level.nc"
 # Load diffs_stddev_by_level.nc
 blob = bucket.blob(diffs_stddev_path)
 with blob.open('rb') as f:
-    diffs_stddev_by_level = xarray.load_dataset(f).compute()
+    diffs_stddev_by_level = xr.load_dataset(f).compute()
 
 # Load mean_by_level.nc
 blob = bucket.blob(mean_path)
 with blob.open('rb') as f:
-    mean_by_level = xarray.load_dataset(f).compute()
+    mean_by_level = xr.load_dataset(f).compute()
 
 # Load stddev_by_level.nc
 blob = bucket.blob(stddev_path)
 with blob.open('rb') as f:
-    stddev_by_level = xarray.load_dataset(f).compute()
+    stddev_by_level = xr.load_dataset(f).compute()
 
 # Construct the GraphCast predictor
 def construct_wrapped_graphcast(model_config:graphcast.ModelConfig, task_config:graphcast.TaskConfig):
@@ -189,7 +189,7 @@ run_forward_jitted = drop_state(with_params(jax.jit(with_configs(run_forward.app
 # Predictor class
 class Predictor:
     @classmethod
-    def predict(cls, inputs, targets, forcings) -> xarray.Dataset:
+    def predict(cls, inputs, targets, forcings) -> xr.Dataset:
         predictions = rollout.chunked_prediction(run_forward_jitted, rng = jax.random.PRNGKey(0), inputs = inputs, targets_template = targets, forcings = forcings)
         return predictions
 
@@ -250,7 +250,7 @@ def getSingleAndPressureValues(year, month):
     with blob.open('rb') as f:
         data = f.read()  # Read the file contents into memory
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
-        singlelevel = xarray.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+        singlelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
         
     singlelevel = singlelevel.rename(columns={col: singlelevelfields[ind] for ind, col in enumerate(singlelevel.columns.values.tolist())})
     singlelevel = singlelevel.rename(columns={'geopotential': 'geopotential_at_surface'})
@@ -268,7 +268,7 @@ def getSingleAndPressureValues(year, month):
     with blob.open('rb') as f:
         data = f.read()  # Read the file contents into memory
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
-        pressurelevel = xarray.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+        pressurelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
     
     pressurelevel = pressurelevel.rename(columns={col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
 
@@ -320,17 +320,17 @@ def integrateSolarRadiation(data:pd.DataFrame):
     return pd.merge(data, values, left_index = True, right_index = True, how = 'inner')
 
 # Modify coordinates in xarray dataset
-def modifyCoordinates(data:xarray.Dataset):
+def modifyCoordinates(data:xr.Dataset):
     print("Modifying grid coordinates.\n")
     for var in list(data.data_vars):
-        varArray:xarray.DataArray = data[var]
+        varArray:xr.DataArray = data[var]
         nonIndices = list(set(list(varArray.coords)).difference(set(AssignCoordinates.coordinates[var])))
         data[var] = varArray.isel(**{coord: 0 for coord in nonIndices})
     data = data.drop_vars('batch')
     return data
 
 # Convert pandas dataframe to xarray dataset
-def makeXarray(data:pd.DataFrame) -> xarray.Dataset:
+def makeXarray(data:pd.DataFrame) -> xr.Dataset:
     print("Creating XArray.\n")
     data = data.to_xarray()
     data = modifyCoordinates(data)
@@ -350,7 +350,7 @@ def getTargets(dt, data:pd.DataFrame):
     print("Getting target data.\n")
     lat, lon, levels, batch = sorted(data.index.get_level_values('lat').unique().tolist()), sorted(data.index.get_level_values('lon').unique().tolist()), sorted(data.index.get_level_values('level').unique().tolist()), data.index.get_level_values('batch').unique().tolist()
     time = [deltaTime(dt, hours = days * gap) for days in range(predictions_steps)]
-    target = xarray.Dataset({field: (['lat', 'lon', 'level', 'time'], nans(len(lat), len(lon), len(levels), len(time))) for field in predictionFields}, coords = {'lat': lat, 'lon': lon, 'level': levels, 'time': time, 'batch': batch})
+    target = xr.Dataset({field: (['lat', 'lon', 'level', 'time'], nans(len(lat), len(lon), len(levels), len(time))) for field in predictionFields}, coords = {'lat': lat, 'lon': lon, 'level': levels, 'time': time, 'batch': batch})
     return target.to_dataframe()
 
 # Generate forcing data for prediction
@@ -383,7 +383,7 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
     forecast_results = []
 
     for location_name, (lat, lon, station_id) in location_options.items():
-        values: Dict[str, xarray.Dataset] = {}
+        values: Dict[str, xr.Dataset] = {}
 
         if year in range(2022, 2023):     # <-------- Year validation only for testing
             print("Getting single level and pressure level values\n")
@@ -477,8 +477,8 @@ def main(init_date_str, forecast_steps):  # Accept parameters
         print(f'Error: {str(e)}\n')
 
 if __name__ == '__main__':
-    init_date_str =  '2022-01-01' #sys.argv[1]  # Get init_date from command-line arguments
+    init_date_str =  '2022-01-01' #sys.argv[2]  # Get init_date from command-line arguments
     print('Forecast Init time: {}\n'.format(init_date_str))
-    forecast_steps = 10 #int(sys.argv[2])  # Get forecast_steps from command-line arguments
+    forecast_steps = 10 #int(sys.argv[3])  # Get forecast_steps from command-line arguments
     print("Forecast steps: {}\n".format(forecast_steps))
     main(init_date_str, forecast_steps)  # Pass arguments to main function
