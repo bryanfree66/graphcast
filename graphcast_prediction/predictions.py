@@ -248,14 +248,20 @@ def getSingleAndPressureValues(year, month):
     blob = bucket.blob(single_level_path)
 
     with blob.open('rb') as f:
+        print("Reading single level data\n")
         data = f.read()  # Read the file contents into memory
+        print("Reading single level NetCDF4 data into memory\n")
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
+        print("Converting single level data into xarray dataset\n")
         singlelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
         
+    print("Renaming single level columns using values from list\n")
     singlelevel = singlelevel.rename(columns={col: singlelevelfields[ind] for ind, col in enumerate(singlelevel.columns.values.tolist())})
+    print("Renaming geopotential column to geopotential_at_surface\n")
     singlelevel = singlelevel.rename(columns={'geopotential': 'geopotential_at_surface'})
 
     # Calculating the sum of the last 6 hours of rainfall.
+    print("Calculating the sum of the last 6 hours of rainfall\n")
     singlelevel = singlelevel.sort_index()
     singlelevel['total_precipitation_6hr'] = singlelevel.groupby(level=[0, 1])['total_precipitation'].rolling(
         window=6, min_periods=1).sum().reset_index(level=[0, 1], drop=True)
