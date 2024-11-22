@@ -256,6 +256,10 @@ def getSingleAndPressureValues(year, month):
         singlelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
         
     print("Renaming single level columns using values from list\n")
+    # Drop the 'number' and 'expver' columns
+    singlelevel = singlelevel.drop(columns=['number', 'expver'])
+    # DEBUG checking column names
+    print("Single-level columns:{}\n".format(singlelevel.columns))
     singlelevel = singlelevel.rename(columns={col: singlelevelfields[ind] for ind, col in enumerate(singlelevel.columns.values.tolist())})
     print("Renaming geopotential column to geopotential_at_surface\n")
     singlelevel = singlelevel.rename(columns={'geopotential': 'geopotential_at_surface'})
