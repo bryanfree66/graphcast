@@ -288,10 +288,11 @@ def getSingleAndPressureValues(year, month):
     pressurelevel = pressurelevel.drop(columns=['number', 'expver'])
     # DEBUG checking column names
     print("Pressure-level columns:{}\n".format(pressurelevel.columns))
-    
+
     print(f"Renaming pressure level columns using values from list\n")
     pressurelevel = pressurelevel.rename(columns={col: pressurelevelfields[ind] for ind, col in enumerate(pressurelevel.columns.values.tolist())})
 
+    print("Finished processing single level and pressure level data\n")
     return singlelevel, pressurelevel
 
 # Add sin and cos of the year progress
@@ -408,10 +409,13 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
         if year in range(2022, 2023):     # <-------- Year validation only for testing
             print("Getting single level and pressure level values\n")
             single, pressure = getSingleAndPressureValues(year, month)
+            print("Merging pressure level and single level data\n")
             values['inputs'] = pd.merge(pressure, single, left_index=True, right_index=True, how='inner')
+            print("Formatting lat lon data\n")
             values['inputs'] = values['inputs'].xs((lat, lon), level=('lat', 'lon'))
 
             # Roll out the forecast for the specified number of steps
+            print("Calculating forecast steps\n")
             current_time = datetime.datetime(year, month, init_date.day, 6, 0)  # Start at 6:00 AM
             end_time = current_time + datetime.timedelta(hours=6 * forecast_steps)  # Calculate end time based on steps
 
