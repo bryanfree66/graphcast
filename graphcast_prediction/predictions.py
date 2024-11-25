@@ -10,7 +10,7 @@ import isodate
 import jax
 import math
 import numpy as np
-import pandas as pd
+import modin.pandas as pd
 from pysolar.radiation import get_radiation_direct
 from pysolar.solar import get_altitude
 import pytz
@@ -20,6 +20,9 @@ import xarray as xr
 import netCDF4
 import os
 import sys
+
+# Set modin execution engine
+modin.set_engine("Pandas")
 
 # Define location options
 print("Defining location options\n")
