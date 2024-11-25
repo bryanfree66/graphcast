@@ -221,7 +221,7 @@ def addTimezone(dt, tz = pytz.UTC) -> datetime.datetime:
         return dt.astimezone(tz)
 
 # Load ERA5 data for a single year and month
-def getSingleAndPressureValues(year, month):
+def getSingleAndPressureValues(year, month, day):
     """
     Loads single-level and pressure-level data for the specified year and month.
 
@@ -399,6 +399,7 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
     # data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'gs://elet-dm-graphcast/dataset')
 
     # Determine the month for file retrieval
+    day = init_date.day
     month = init_date.month
     year = init_date.year
 
@@ -409,7 +410,7 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
 
         if year in range(2022, 2023):     # <-------- Year validation only for testing
             print("Getting single level and pressure level values\n")
-            single, pressure = getSingleAndPressureValues(year, month)
+            single, pressure = getSingleAndPressureValues(year, month, day)
             
 
             print("Merging pressure level and single level data\n")
