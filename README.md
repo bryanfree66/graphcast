@@ -1,10 +1,10 @@
-# GraphCast Weather Forecasting for Electrobras
+# GraphCast Weather Forecasting
 
 This repository contains the code and artifacts for deploying and evaluating Google DeepMind's GraphCast model for medium-range weather forecasting, specifically tailored for Electrobras's operational needs in Brazil.
 
 ## Project Overview
 
-This project aims to demonstrate the value of GraphCast in providing accurate and timely weather forecasts to support Electrobras's decision-making processes and enhance the resilience of Brazil's energy infrastructure.
+This project aims to demonstrate the value of GraphCast in providing accurate and timely weather forecasts to support decision-making processes and enhance the resilience of Brazil's energy infrastructure.
 
 **Key Objectives:**
 
