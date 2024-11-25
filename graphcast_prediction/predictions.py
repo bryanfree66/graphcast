@@ -20,7 +20,6 @@ import xarray as xr
 import netCDF4
 import os
 import sys
-import dask.dataframe as dd
 
 
 # Define location options
@@ -222,7 +221,7 @@ def addTimezone(dt, tz = pytz.UTC) -> datetime.datetime:
         return dt.astimezone(tz)
 
 # Load ERA5 data for a single year and month
-def getSingleAndPressureValues(year, month):
+def getSingleAndPressureValues(year, month, day):
     """
     Loads single-level and pressure-level data for the specified year and month.
 
@@ -249,13 +248,14 @@ def getSingleAndPressureValues(year, month):
     print("loading file: gs://{}/{}\n".format(gcs_bucket_name, single_level_path))
     blob = bucket.blob(single_level_path)
 
+    # Load single-level data using netCDF4, filtering by day
+    blob = bucket.blob(single_level_path)
     with blob.open('rb') as f:
-        print("Reading single level data\n")
-        data = f.read()  # Read the file contents into memory
-        print("Reading single level NetCDF4 data into memory\n")
+        data = f.read()
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
-        print("Converting single level data into xarray dataset\n")
-        singlelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+        ds = xr.open_dataset(xr.backends.NetCDF4DataStore(nc))
+        singlelevel = ds.sel(
+            time=str(year)+f'-{month:02d}-{day:02d}').to_dataframe()  # Filter by day
         
     print("Renaming single level columns using values from list\n")
     # Drop the 'number' and 'expver' columns
@@ -275,16 +275,15 @@ def getSingleAndPressureValues(year, month):
 
     # Load pressure-level data
     print("loading file: {}\n".format(pressure_level_path))
-    
-    # Load pressure-level data using netCDF4
+
+    # Load pressure-level data using netCDF4, filtering by day
     blob = bucket.blob(pressure_level_path)
     with blob.open('rb') as f:
-        print("Reading pressure level data\n")
-        data = f.read()  # Read the file contents into memory
-        print("Reading pressure level NetCDF4 data into memory\n")
+        data = f.read()
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
-        print("Converting pressure level data into xarray dataset\n")
-        pressurelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+        ds = xr.open_dataset(xr.backends.NetCDF4DataStore(nc))
+        pressurelevel = ds.sel(
+            time=str(year)+f'-{month:02d}-{day:02d}').to_dataframe()  # Filter by day
     
     # Drop the 'number' and 'expver' columns
     pressurelevel = pressurelevel.drop(columns=['number', 'expver'])
@@ -400,6 +399,7 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
     # data_bucket_name = os.environ.get('GRAPHCAST_DATA_BUCKET', 'gs://elet-dm-graphcast/dataset')
 
     # Determine the month for file retrieval
+    day = init_date.day
     month = init_date.month
     year = init_date.year
 
@@ -410,16 +410,12 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
 
         if year in range(2022, 2023):     # <-------- Year validation only for testing
             print("Getting single level and pressure level values\n")
-            single, pressure = getSingleAndPressureValues(year, month)
-            # Convert pandas DataFrames to Dask DataFrames
-            print("Converting pandas DataFrames to Dask DataFrames\n")
-            single_dask = dd.from_pandas(single, npartitions=4)
-            pressure_dask = dd.from_pandas(pressure, npartitions=4)
+            single, pressure = getSingleAndPressureValues(year, month, day)
+            
 
             print("Merging pressure level and single level data\n")
-            # Perform the merge using Dask
-            values['inputs'] = dd.merge(pressure_dask, single_dask, left_index=True,
-                                        right_index=True, how='inner').compute()  # Compute the result
+            print("Merging pressure level and single level data\n")
+            values['inputs'] = pd.merge(pressure, single, left_index=True, right_index=True, how='inner')
             print("Formatting lat lon data\n")
             values['inputs'] = values['inputs'].xs((lat, lon), level=('lat', 'lon'))
 
