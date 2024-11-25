@@ -248,13 +248,14 @@ def getSingleAndPressureValues(year, month):
     print("loading file: gs://{}/{}\n".format(gcs_bucket_name, single_level_path))
     blob = bucket.blob(single_level_path)
 
+    # Load single-level data using netCDF4, filtering by day
+    blob = bucket.blob(single_level_path)
     with blob.open('rb') as f:
-        print("Reading single level data\n")
-        data = f.read()  # Read the file contents into memory
-        print("Reading single level NetCDF4 data into memory\n")
+        data = f.read()
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
-        print("Converting single level data into xarray dataset\n")
-        singlelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+        ds = xr.open_dataset(xr.backends.NetCDF4DataStore(nc))
+        singlelevel = ds.sel(
+            time=str(year)+f'-{month:02d}-{day:02d}').to_dataframe()  # Filter by day
         
     print("Renaming single level columns using values from list\n")
     # Drop the 'number' and 'expver' columns
@@ -274,16 +275,15 @@ def getSingleAndPressureValues(year, month):
 
     # Load pressure-level data
     print("loading file: {}\n".format(pressure_level_path))
-    
-    # Load pressure-level data using netCDF4
+
+    # Load pressure-level data using netCDF4, filtering by day
     blob = bucket.blob(pressure_level_path)
     with blob.open('rb') as f:
-        print("Reading pressure level data\n")
-        data = f.read()  # Read the file contents into memory
-        print("Reading pressure level NetCDF4 data into memory\n")
+        data = f.read()
         nc = netCDF4.Dataset('in-memory.nc', 'r', memory=data)
-        print("Converting pressure level data into xarray dataset\n")
-        pressurelevel = xr.open_dataset(xr.backends.NetCDF4DataStore(nc)).to_dataframe()
+        ds = xr.open_dataset(xr.backends.NetCDF4DataStore(nc))
+        pressurelevel = ds.sel(
+            time=str(year)+f'-{month:02d}-{day:02d}').to_dataframe()  # Filter by day
     
     # Drop the 'number' and 'expver' columns
     pressurelevel = pressurelevel.drop(columns=['number', 'expver'])
