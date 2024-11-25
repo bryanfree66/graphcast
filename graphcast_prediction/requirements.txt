@@ -15,4 +15,4 @@ pysolar==0.11
 python-dotenv==0.19.2
 werkzeug==2.1.2
 netCDF4==1.7.2
-modin==0.32.0
+dask==2024.11.2

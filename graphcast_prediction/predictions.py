@@ -10,7 +10,7 @@ import isodate
 import jax
 import math
 import numpy as np
-import modin.pandas as pd
+import pandas as pd
 from pysolar.radiation import get_radiation_direct
 from pysolar.solar import get_altitude
 import pytz
@@ -20,9 +20,8 @@ import xarray as xr
 import netCDF4
 import os
 import sys
+import dask.dataframe as dd
 
-# Set modin execution engine
-modin.set_engine("Pandas")
 
 # Define location options
 print("Defining location options\n")
@@ -412,8 +411,15 @@ def generate_forecast_batch(init_date: datetime.datetime, forecast_steps: int) -
         if year in range(2022, 2023):     # <-------- Year validation only for testing
             print("Getting single level and pressure level values\n")
             single, pressure = getSingleAndPressureValues(year, month)
+            # Convert pandas DataFrames to Dask DataFrames
+            print("Converting pandas DataFrames to Dask DataFrames\n")
+            single_dask = dd.from_pandas(single, npartitions=4)
+            pressure_dask = dd.from_pandas(pressure, npartitions=4)
+
             print("Merging pressure level and single level data\n")
-            values['inputs'] = pd.merge(pressure, single, left_index=True, right_index=True, how='inner')
+            # Perform the merge using Dask
+            values['inputs'] = dd.merge(pressure_dask, single_dask, left_index=True,
+                                        right_index=True, how='inner').compute()  # Compute the result
             print("Formatting lat lon data\n")
             values['inputs'] = values['inputs'].xs((lat, lon), level=('lat', 'lon'))
 
