@@ -474,7 +474,7 @@ def write_to_bigquery(forecast_results: List[Dict]):
             'station_id': result['station_id'],
             'name': result['name'],
             'hours': result['hours'],
-            # ... map other fields from forecast_results to BigQuery columns ...
+            # TODO: map other fields from forecast_results to BigQuery columns ...
         }
         rows_to_insert.append(row)
 
